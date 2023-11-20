@@ -4,7 +4,6 @@ const time = document.querySelector(".time");
 const startScreen = document.querySelector(".startScreen");
 const gameArea = document.querySelector(".gameArea");
 const level = document.querySelector(".level");
-
 let carElement = document.createElement("div");
 carElement.setAttribute("class", "car");
 carElement.style.backgroundImage = "url('assets/car.png')";
@@ -20,6 +19,8 @@ let gameOver = new Audio();
 
 let isGoodCollisionActive = false;
 let isBadCollisionActive = false;
+console.log(isGoodCollisionActive, isBadCollisionActive);
+
 
 const levelSpeed = { easy: 7, moderate: 10, difficult: 14 };
 
@@ -34,17 +35,7 @@ startScreen.addEventListener("click", (e) => {
   player.speed = 6;
 });
 
-function setPositionWithExclusion(collisionElement, otherCollisionActive) {
-  let position;
-  do {
-    position = Math.floor(Math.random() * 350);
-  } while (
-    otherCollisionActive &&
-    Math.abs(position - otherCollisionLeft) < 100
-  ); // Avoid overlap
-  collisionElement.style.left = position + "px";
-  return position;
-}
+
 
 startScreen.addEventListener("click", () => {
   // gameArea.classList.remove('hide');
@@ -52,10 +43,15 @@ startScreen.addEventListener("click", () => {
   gameArea.innerHTML = "";
 
   player.start = true;
-  gameStart.play();
-  gameStart.loop = true;
   player.score = 0;
   player.time = 60;
+  player.speed = 6; // Adjust speed as needed
+  isGoodCollisionActive = false;
+  isBadCollisionActive = false;
+  lastGoodCollisionLeft = null;
+  lastBadCollisionLeft = null;
+  gameStart.play();
+  gameStart.loop = true;
   updateTimerDisplay();
   window.requestAnimationFrame(gamePlay);
   player.timer = setInterval(function () {
@@ -107,6 +103,22 @@ function onCollision(a, b) {
   );
 }
 
+let lastGoodCollisionLeft = null;
+let lastBadCollisionLeft = null;
+
+function setPositionWithExclusion(collisionElement, otherCollisionActive, otherCollisionLeft) {
+  let position;
+  do {
+    position = Math.floor(Math.random() * 350);
+  } while (
+    otherCollisionActive &&
+    otherCollisionLeft !== null &&
+    Math.abs(position - otherCollisionLeft) < 100
+  );
+  collisionElement.style.left = position + "px";
+  return position;
+}
+
 function createGoodCollision() {
   if (!isGoodCollisionActive) {
     let goodCollision = document.createElement("div");
@@ -114,16 +126,15 @@ function createGoodCollision() {
     goodCollision.y = -350; // Start off-screen
     goodCollision.style.top = goodCollision.y + "px";
     const imageOptions = ["battery.png", "windmill.png", "chargingStation.png"];
-    const chosenImage =
-      imageOptions[Math.floor(Math.random() * imageOptions.length)];
+    const chosenImage = imageOptions[Math.floor(Math.random() * imageOptions.length)];
     goodCollision.style.backgroundImage = `url('assets/${chosenImage}')`;
-    goodCollision.style.left = Math.floor(Math.random() * 350) + "px";
     goodCollision.style.height = "80px";
     goodCollision.style.width = "80px";
-    // Update in createGoodCollision and createBadCollision
-    goodCollision.style.left = setPositionWithExclusion(
+
+    lastGoodCollisionLeft = setPositionWithExclusion(
       goodCollision,
-      isBadCollisionActive
+      isBadCollisionActive,
+      lastBadCollisionLeft
     );
 
     gameArea.appendChild(goodCollision);
@@ -138,26 +149,30 @@ function createBadCollision() {
     badCollision.y = -350; // Start off-screen
     badCollision.style.top = badCollision.y + "px";
     const imageOptions = ["oil.png", "petrol.png", "coal.png"];
-    const chosenImage =
-      imageOptions[Math.floor(Math.random() * imageOptions.length)];
+    const chosenImage = imageOptions[Math.floor(Math.random() * imageOptions.length)];
     badCollision.style.backgroundImage = `url('assets/${chosenImage}')`;
-    badCollision.style.left = Math.floor(Math.random() * 350) + "px";
     badCollision.style.height = "80px";
     badCollision.style.width = "80px";
-    badCollision.style.left = setPositionWithExclusion(
+
+    lastBadCollisionLeft = setPositionWithExclusion(
       badCollision,
-      isGoodCollisionActive
+      isGoodCollisionActive,
+      lastGoodCollisionLeft
     );
+
     gameArea.appendChild(badCollision);
     isBadCollisionActive = true;
   }
 }
+
 
 function onGameOver() {
   player.start = false;
   gameStart.pause();
   gameOver.play();
   clearInterval(player.timer); // Clear the timer
+  isGoodCollisionActive = false;
+  isBadCollisionActive = false;
 
   startScreen.classList.remove("hide");
   startScreen.innerHTML =
