@@ -107,17 +107,23 @@ let lastGoodCollisionLeft = null;
 let lastBadCollisionLeft = null;
 
 function setPositionWithExclusion(collisionElement, otherCollisionActive, otherCollisionLeft) {
+  const gameAreaWidth = gameArea.offsetWidth;
+  const collisionWidth = 80; // Width of your collision element
+  let maxPosition = gameAreaWidth - collisionWidth;
   let position;
+
   do {
-    position = Math.floor(Math.random() * 350);
+    position = Math.floor(Math.random() * maxPosition);
   } while (
     otherCollisionActive &&
     otherCollisionLeft !== null &&
     Math.abs(position - otherCollisionLeft) < 100
   );
+
   collisionElement.style.left = position + "px";
   return position;
 }
+
 
 function createGoodCollision() {
   if (!isGoodCollisionActive) {
